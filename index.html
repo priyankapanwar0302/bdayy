@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE GHOST PROTOCOL // OPERATION: BATMAN POOKIE</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #0A0B10;
+      --bg-secondary: #12151E;
+      --bg-card: #161924;
+      --border-color: rgba(255, 255, 255, 0.12);
+      --border-highlight: rgba(255, 141, 171, 0.35);
+      --crimson: #FF3B62;
+      --crimson-glow: rgba(255, 59, 98, 0.35);
+      --dusty-pink: #FF8DAB;
+      --dusty-pink-glow: rgba(255, 141, 171, 0.3);
+      
+      /* HIGH-CONTRAST TEXT PALETTE */
+      --text-pure: #FFFFFF;
+      --text-main: #E5E9F0;
+      --text-muted: #ACB2C1;
+      
+      --font-mono: 'Space Mono', monospace;
+      --font-serif: 'Playfair Display', serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ==========================================================================
+       1. FIXED BACKGROUND LAYERING (STAYS BEHIND TEXT)
+       ========================================================================== */
+    .tactical-background-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0; /* Locked strictly behind content */
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(255, 59, 98, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(255, 141, 171, 0.06) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
+    }
+
+    /* Scanline texture strictly set behind content */
+    .scanline-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    /* Watermark Coordinates */
+    .bg-coordinate-tag {
+      position: absolute;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: rgba(255, 141, 171, 0.25);
+      user-select: none;
+      text-transform: uppercase;
+      z-index: 0;
+    }
+    .bg-coord-left {
+      top: 20%;
+      left: 20px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+    .bg-coord-right {
+      bottom: 15%;
+      right: 20px;
+      writing-mode: vertical-rl;
+    }
+
+    /* Content wrapper so all text renders above the background */
+    main, header, section {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Ambient Pink Bow / Heart Particles */
+    .ambient-particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.45;
+      font-size: 14px;
+      animation: floatParticle 8s ease-in-out infinite;
+    }
+
+    @keyframes floatParticle {
+      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.25; }
+      50% { transform: translateY(-35px) rotate(14deg); opacity: 0.65; }
+    }
+
+    /* ==========================================================================
+       2. TARGET RETICLE CURSOR
+       ========================================================================== */
+    @media (hover: hover) and (pointer: fine) {
+      body, a, button, input, .classified-file-box, .wax-seal-btn, .tab-btn, .threat-node, .btn-game-action {
+        cursor: none !important;
+      }
+    }
+
+    .custom-reticle-center {
+      position: fixed;
+      top: 0; left: 0;
+      width: 14px; height: 14px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 99999;
+      transition: opacity 0.2s ease, transform 0.05s ease-out;
+    }
+    .custom-reticle-center::before,
+    .custom-reticle-center::after {
+      content: "";
+      position: absolute;
+      background: var(--dusty-pink);
+      box-shadow: 0 0 8px var(--dusty-pink);
+    }
+    .custom-reticle-center::before { top: 0; left: 6px; width: 2px; height: 14px; }
+    .custom-reticle-center::after { top: 6px; left: 0; width: 14px; height: 2px; }
+
+    .custom-reticle-ring {
+      position: fixed;
+      top: 0; left: 0;
+      width: 38px; height: 38px;
+      border: 1.5px dashed var(--dusty-pink);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 99998;
+      transition: width 0.2s ease, height 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      animation: radarSpin 12s linear infinite;
+    }
+    @keyframes radarSpin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .custom-reticle-ring.target-locked {
+      width: 52px; height: 52px;
+      border-style: solid;
+      border-color: var(--crimson);
+      background: rgba(255, 59, 98, 0.15);
+      box-shadow: 0 0 20px var(--crimson-glow);
+    }
+
+    .custom-reticle-center.target-locked::before,
+    .custom-reticle-center.target-locked::after {
+      background: var(--crimson);
+      box-shadow: 0 0 10px var(--crimson);
+    }
+
+    /* ==========================================================================
+       3. HIGH-CONTRAST TYPOGRAPHY & SECTIONS
+       ========================================================================== */
+    .classified-status-bar {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 46px;
+      background: rgba(10, 11, 16, 0.95);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      z-index: 1000;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pulse-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--dusty-pink);
+      box-shadow: 0 0 10px var(--dusty-pink);
+      animation: pulseGlow 1.8s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+    .status-highlight {
+      color: var(--dusty-pink);
+      font-weight: 700;
+    }
+
+    /* Opening Hero */
+    .opening-hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 110px 20px 60px 20px;
+    }
+    .classified-stamp {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 3px;
+      color: var(--crimson);
+      border: 1px solid rgba(255, 59, 98, 0.5);
+      background: rgba(255, 59, 98, 0.12);
+      padding: 6px 18px;
+      border-radius: 4px;
+      margin-bottom: 24px;
+      font-weight: 700;
+    }
+
+    .hero-duo-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .avatar-frame {
+      width: 170px; height: 170px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      background: #10121a;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .avatar-frame img { width: 100%; height: 100%; object-fit: cover; }
+    .ghost-frame { border-color: var(--crimson); box-shadow: 0 0 25px var(--crimson-glow); }
+    .batman-frame { border-color: var(--dusty-pink); box-shadow: 0 0 25px var(--dusty-pink-glow); }
+
+    .avatar-badge-pin {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(9, 10, 13, 0.9);
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+      color: var(--text-light);
+    }
+
+    .duo-link {
+      font-size: 1.8rem;
+      color: var(--dusty-pink);
+      animation: pulseGlow 2s infinite;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      font-weight: 700;
+      color: var(--text-pure);
+      text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+      margin-bottom: 14px;
+    }
+    .hero-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .hero-mission-text {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--dusty-pink);
+      letter-spacing: 1px;
+      margin-bottom: 36px;
+      font-weight: 600;
+    }
+
+    .btn-access {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-pure);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      padding: 14px 34px;
+      border: 1px solid var(--border-highlight);
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s ease;
+    }
+    .btn-access:hover {
+      border-color: var(--dusty-pink);
+      color: var(--dusty-pink);
+      background: rgba(255, 141, 171, 0.1);
+      box-shadow: 0 0 25px var(--dusty-pink-glow);
+      transform: translateY(-2px);
+    }
+
+    /* Section Containers & Clear White Headings */
+    .section-container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 110px 24px;
+      border-top: 1px solid var(--border-color);
+    }
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: var(--dusty-pink);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: block;
+      font-weight: 700;
+    }
+    .section-heading {
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      color: var(--text-pure) !important; /* Forces bright pure white */
+      text-shadow: 0 2px 15px rgba(0,0,0,0.9);
+      font-weight: 700;
+      margin-bottom: 36px;
+    }
+
+    /* The Triad Profile Section */
+    .profile-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--dusty-pink);
+      color: var(--text-pure);
+      background: rgba(255, 141, 171, 0.15);
+      box-shadow: 0 0 15px var(--dusty-pink-glow);
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 40px;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 36px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    }
+
+    .profile-portrait-wrap {
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-portrait-wrap img {
+      width: 100%; height: 380px; object-fit: cover; border-radius: 4px;
+    }
+
+    .portrait-badge {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: rgba(9, 10, 13, 0.9);
+      border: 1px solid var(--dusty-pink);
+      color: var(--dusty-pink);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .dossier-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dossier-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+
+    .dossier-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+    .dossier-value {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-pure);
+    }
+    .dossier-value.pink { color: var(--dusty-pink); font-weight: 700; }
+
+    /* 4. CHAT TRANSMISSIONS (High-Contrast Bubbles) */
+    .transmissions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .transmission-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 26px 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .trans-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+      padding-bottom: 10px;
+    }
+
+    .trans-title { color: var(--dusty-pink); font-weight: 700; }
+
+    .chat-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-bubble-log {
+      max-width: 85%;
+      padding: 14px 20px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .bubble-ayush {
+      align-self: flex-start;
+      background: #1C202C;
+      border-left: 3px solid var(--text-muted);
+      color: #FFFFFF !important;
+    }
+
+    .bubble-priyanka {
+      align-self: flex-end;
+      background: #2D1823;
+      border-right: 3px solid var(--dusty-pink);
+      color: #FFFFFF !important;
+      text-align: right;
+    }
+
+    /* 5. MEMORY ARCHIVE */
+    .archive-collage {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+
+    .collage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .collage-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--dusty-pink);
+      z-index: 5;
+    }
+
+    .collage-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    
+    .collage-card .caption-tag {
+      position: absolute;
+      bottom: 0; left: 0; width: 100%;
+      background: linear-gradient(0deg, rgba(8, 9, 13, 0.95) 0%, transparent 100%);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .span-6 { grid-column: span 6; height: 380px; }
+    .span-4 { grid-column: span 4; height: 380px; }
+
+    /* 6. INTERACTIVE CLASSIFIED FILES */
+    .files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .classified-file-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 24px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .classified-file-box::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--border-color);
+      transition: background 0.3s ease;
+    }
+
+    .classified-file-box:hover::before,
+    .classified-file-box.revealed::before {
+      background: var(--dusty-pink);
+    }
+
+    .file-code {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--dusty-pink);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .file-heading {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-pure);
+      margin-bottom: 8px;
+    }
+    .file-prompt {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .file-hidden-content {
+      display: none;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.15);
+      font-size: 0.92rem;
+      color: #FFFFFF;
+      line-height: 1.6;
+    }
+    .classified-file-box.revealed .file-hidden-content { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 7. RADAR SECTION */
+    .radar-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 60px 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+    }
+
+    .radar-grid {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      max-width: 700px;
+      margin: 0 auto 40px auto;
+      position: relative;
+    }
+
+    .connecting-vector {
+      position: absolute;
+      top: 50%;
+      left: 15%;
+      width: 70%;
+      height: 1px;
+      background: repeating-linear-gradient(90deg, var(--dusty-pink), var(--dusty-pink) 6px, transparent 6px, transparent 12px);
+      z-index: 1;
+      animation: signalMove 15s linear infinite;
+    }
+
+    @keyframes signalMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 100% 0; }
+    }
+
+    .location-node {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 16px 24px;
+      border-radius: 6px;
+      z-index: 2;
+      position: relative;
+    }
+    .node-title {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-pure);
+    }
+    .node-sub {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--dusty-pink);
+      margin-top: 4px;
+    }
+
+    .distance-quote {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-style: italic;
+      color: #FFFFFF;
+      line-height: 1.6;
+      margin-top: 24px;
+    }
+
+    /* ==========================================================================
+       MINI-GAME STYLES: OPERATION YOU & I VS THE PROBLEM
+       ========================================================================== */
+    .game-hud-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .game-stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .stat-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      color: var(--text-pure);
+      font-weight: 700;
+    }
+
+    .stat-value.pink {
+      color: var(--dusty-pink);
+      text-shadow: 0 0 10px var(--dusty-pink-glow);
+    }
+
+    /* Love progress track */
+    .love-progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .love-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--crimson), var(--dusty-pink));
+      box-shadow: 0 0 12px var(--dusty-pink);
+      transition: width 0.3s ease-out;
+    }
+
+    /* Radar Arena */
+    .radar-arena {
+      position: relative;
+      width: 100%;
+      height: 440px;
+      background: radial-gradient(circle at center, #11141c 0%, #090a0d 100%);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .radar-crosshair-bg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .radar-sweep-beam {
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, rgba(255, 141, 171, 0.08) 0deg, transparent 45deg, transparent 360deg);
+      animation: radarSweepAnim 10s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes radarSweepAnim {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Target Nodes */
+    .threat-node {
+      position: absolute;
+      background: rgba(197, 43, 72, 0.15);
+      border: 1px solid var(--crimson);
+      color: #FFF;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      user-select: none;
+      box-shadow: 0 0 15px var(--crimson-glow);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: pulseThreat 1.5s infinite alternate;
+      z-index: 10;
+      transition: transform 0.1s ease;
+    }
+
+    .threat-node:hover {
+      transform: scale(1.08);
+      border-color: var(--dusty-pink);
+    }
+
+    @keyframes pulseThreat {
+      0% { box-shadow: 0 0 8px var(--crimson-glow); }
+      100% { box-shadow: 0 0 18px rgba(255, 59, 98, 0.6); }
+    }
+
+    /* Heart Explosion Particle */
+    .heart-burst {
+      position: absolute;
+      pointer-events: none;
+      font-size: 1.5rem;
+      z-index: 20;
+      animation: heartExplode 0.8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes heartExplode {
+      0% { transform: translate(-50%, -50%) scale(0.6); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.6); opacity: 0; }
+    }
+
+    /* Arena Overlay Cards */
+    .arena-start-prompt, .victory-card {
+      position: absolute;
+      text-align: center;
+      z-index: 30;
+      background: rgba(18, 20, 26, 0.92);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .victory-card {
+      display: none;
+      border-color: var(--dusty-pink);
+      box-shadow: 0 0 40px var(--dusty-pink-glow);
+      animation: fadeIn 0.4s ease;
+    }
+
+    .btn-game-action {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-pure);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      letter-spacing: 1.5px;
+      padding: 10px 24px;
+      border: 1px solid var(--dusty-pink);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-game-action:hover {
+      background: var(--dusty-pink);
+      color: #0A0B10;
+      box-shadow: 0 0 20px var(--dusty-pink-glow);
+      font-weight: 700;
+    }
+
+    /* 8. LETTER BOX */
+    .final-dossier-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .envelope-box {
+      width: 100%; max-width: 720px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 40px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      position: relative;
+      transition: border-color 0.3s ease;
+    }
+
+    .envelope-box:hover {
+      border-color: rgba(255, 141, 171, 0.4);
+    }
+
+    .wax-seal-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--crimson);
+      color: #FFF;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+      margin: 0 auto 24px auto;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.15);
+      box-shadow: 0 0 20px rgba(255, 59, 98, 0.4);
+      transition: transform 0.2s ease;
+    }
+
+    .wax-seal-btn:hover {
+      transform: scale(1.08);
+    }
+
+    .sealed-text {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .letter-content-revealed {
+      display: none;
+      text-align: left;
+      margin-top: 30px;
+      padding-top: 24px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .letter-paper {
+      background: #0D0F14;
+      border: 1px solid var(--border-highlight);
+      border-radius: 6px;
+      padding: 30px;
+      font-size: 1rem;
+      line-height: 1.85;
+      color: #F3F4F6 !important; /* Clear, bright white letter text */
+      white-space: pre-line;
+    }
+
+    .letter-salutation {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--dusty-pink);
+      margin-bottom: 16px;
+    }
+
+    .letter-closing {
+      margin-top: 24px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--dusty-pink);
+    }
+
+    .comic-card-wrap {
+      margin-top: 40px;
+      max-width: 320px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+
+    .comic-card-wrap img {
+      width: 100%;
+      display: block;
+      background: #FAF8F5;
+    }
+
+    .final-footer-status {
+      margin-top: 50px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+
+    @media (max-width: 860px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .span-6, .span-4 { grid-column: span 12; height: auto; min-height: 300px; }
+      .radar-grid { flex-direction: column; gap: 24px; }
+      .connecting-vector { display: none; }
+      .hero-duo-avatar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Custom Reticle Cursor -->
+  <div class="custom-reticle-center" id="reticleCenter"></div>
+  <div class="custom-reticle-ring" id="reticleRing"></div>
+
+  <!-- Background Elements (Layered safely behind text at z-index: 0) -->
+  <div class="tactical-background-layer">
+    <div class="bg-coordinate-tag bg-coord-left">
+      PRIYANKA // DEHRADUN STATION: 30.3165° N, 78.0322° E
+    </div>
+    <div class="bg-coordinate-tag bg-coord-right">
+      BATMAN // GHORAKHAL BASE: 29.3919° N, 79.5290° E
+    </div>
+  </div>
+  <div class="scanline-overlay"></div>
+
+  <!-- 1. CLASSIFIED STATUS BAR -->
+  <header class="classified-status-bar">
+    <div class="status-left">
+      <div class="pulse-dot"></div>
+      <span>GHOST PROTOCOL // SUBJECT: BATMAN</span>
+    </div>
+    <div>
+      ACCESS LEVEL: <span class="status-highlight">18</span> // 26 NOVEMBER
+    </div>
+  </header>
+
+  <!-- 2. OPENING SCREEN -->
+  <section class="opening-hero" id="opening">
+    <div class="classified-stamp">CLASSIFIED FILE RECOVERED</div>
+    
+    <!-- Dual Avatar: The Ghost Stare meets Batman with Pink Bow -->
+    <div class="hero-duo-avatar">
+      <div class="avatar-frame ghost-frame">
+        <img src="images/cinematic-ghost.jpg" alt="Cinematic Hooded Skull Ghost">
+        <span class="avatar-badge-pin">OPERATOR GHOST</span>
+      </div>
+      
+      <div class="duo-link">⇄</div>
+
+      <div class="avatar-frame batman-frame">
+        <img src="images/batman-bow.png" alt="Batman with cute pink ribbon bow">
+        <span class="avatar-badge-pin">BATMAN POOKIE 🎀</span>
+      </div>
+    </div>
+
+    <div class="hero-subtitle">SUBJECT: BATMAN // LEVEL 18 UNLOCKED</div>
+    <h1 class="hero-title">“Well, look who's turning 18.”</h1>
+    <p class="hero-mission-text">An extremely important birthday mission has been assigned to you.</p>
+
+    <a href="#profile" class="btn-access">
+      <span>[ ACCESS THE FILE ]</span>
+      <span>→</span>
+    </a>
+  </section>
+
+  <!-- 3. OPERATOR PROFILE: THE TRIAD -->
+  <section class="section-container" id="profile">
+    <span class="section-tag">// IDENTITY VERIFICATION</span>
+    <h2 class="section-heading">Multi-Threat Assessment</h2>
+
+    <!-- Dynamic Profile Selector -->
+    <div class="profile-tabs">
+      <button class="tab-btn active" onclick="switchProfile('batman', this)">Codename: Batman 🦇</button>
+      <button class="tab-btn" onclick="switchProfile('ghost', this)">Codename: Ghost 💀</button>
+      <button class="tab-btn" onclick="switchProfile('cadet', this)">Codename: Pineapple 🍍</button>
+    </div>
+
+    <div class="profile-grid">
+      <div class="profile-portrait-wrap">
+        <span class="portrait-badge" id="portraitBadge">🎀 POOKIE VERIFIED</span>
+        <img id="portraitImg" src="images/batman-blush.png" alt="Blushing Batman with Bow">
+      </div>
+
+      <div class="dossier-panel" id="dossierContent">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ORIGIN STORY -->
+  <section class="section-container" id="origin">
+    <span class="section-tag">// ARCHIVED DIGITAL LOGS</span>
+    <h2 class="section-heading">Recovered Transmissions</h2>
+
+    <div class="transmissions-list">
+      <!-- First Contact -->
+      <div class="transmission-card">
+        <div class="trans-header">
+          <span class="trans-title">// FIRST CONTACT</span>
+          <span>05 SEPTEMBER 2024 • 17:20 IST</span>
+        </div>
+        <div class="chat-row">
+          <div class="chat-bubble-log bubble-ayush">
+            <strong>Ayush:</strong> “Hi Ayush Joshi, this side, you may find awkard about this text, but in casual scrolling in Instagram (suggestions), I found u so thought to dropping text”
+          </div>
+          <div class="chat-bubble-log bubble-priyanka">
+            <strong>Priyanka:</strong> “ohh it's alright... you are in which standard?”
+          </div>
+          <div class="chat-bubble-log bubble-ayush">
+            <strong>Ayush:</strong> “I am In 10... U?”
+          </div>
+          <div class="chat-bubble-log bubble-priyanka">
+            <strong>Priyanka:</strong> “11th”
+          </div>
+        </div>
+      </div>
+
+      <!-- Formal Deployment -->
+      <div class="transmission-card">
+        <div class="trans-header">
+          <span class="trans-title">// OFFICIAL PROTOCOL INITIATED</span>
+          <span>01 MARCH 2025</span>
+        </div>
+        <p style="font-size: 0.95rem; color: var(--text-pure);">
+          Officially us. Transitioning from hesitant Instagram DMs to counting the minutes between morning PT formations, drill inspections, roll calls, and strict curfews.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. MEMORY ARCHIVE -->
+  <section class="section-container" id="archive">
+    <span class="section-tag">// EVIDENCE REEL</span>
+    <h2 class="section-heading">Classified Memory Vault</h2>
+
+    <div class="archive-collage">
+      <!-- 1. Formal Uniform -->
+      <div class="collage-card span-6">
+        <img src="images/cadet-blazer.jpg" alt="Cadet Ayush Joshi in Maroon Blazer">
+        <div class="caption-tag">FILE: CADET JOSHI // SAINIK SCHOOL GHORAKHAL</div>
+      </div>
+
+      <!-- 2. Jet & Stray Cat -->
+      <div class="collage-card span-6">
+        <img src="images/jet-cat.jpg" alt="Ayush holding cat by jet BX 749">
+        <div class="caption-tag">FILE: FIGHTER JET BX 749 // SECRET RESCUE MISSION 🐾</div>
+      </div>
+
+      <!-- 3. Sepia Photostrip -->
+      <div class="collage-card span-4">
+        <img src="images/photostrip-sepia.jpg" alt="Picapica Sepia Strip">
+        <div class="caption-tag">PICA PICA // 03.23.2026</div>
+      </div>
+
+      <!-- 4. Sunlit Couple Selfie -->
+      <div class="collage-card span-4">
+        <img src="images/sunny-selfie.jpg" alt="Couple outside in sunshine">
+        <div class="caption-tag">DEHRADUN SUNSHINE // US</div>
+      </div>
+
+      <!-- 5. Sticker Photostrip -->
+      <div class="collage-card span-4">
+        <img src="images/photostrip-stickers.jpg" alt="Shinchan Photostrip">
+        <div class="caption-tag">TASK FORCE POOKIE 🎀</div>
+      </div>
+
+      <!-- 6. Anime Art -->
+      <div class="collage-card span-6">
+        <img src="images/anime-art.jpg" alt="Ghibli Anime Couple Portrait">
+        <div class="caption-tag">RECON ART // SUNGLASSES & BUTTERFLY CLIPS ✨</div>
+      </div>
+
+      <!-- 7. Resting on Chest (Safe Space) -->
+      <div class="collage-card span-6">
+        <img src="images/peaceful-comfort.jpg" alt="Resting on his chest">
+        <div class="caption-tag">SAFE SPACE PROTOCOL 🤍</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. THINGS ABOUT BATMAN & GHOST -->
+  <section class="section-container" id="classified-files">
+    <span class="section-tag">// EYES ONLY</span>
+    <h2 class="section-heading">Things About Batman & Ghost</h2>
+
+    <div class="files-grid">
+      <!-- File 01 -->
+      <div class="classified-file-box" onclick="toggleFile(this)">
+        <div class="file-code">FILE 01 // ADORATION</div>
+        <div class="file-heading">Things I adore about you</div>
+        <div class="file-prompt">[ CLICK TO DECRYPT ]</div>
+        <div class="file-hidden-content">
+          Your unwavering patience. Even with exhausting drills, kit inspections, and rigid hours, you still find a way to listen and make me feel like your top priority.
+        </div>
+      </div>
+
+      <!-- File 02 -->
+      <div class="classified-file-box" onclick="toggleFile(this)">
+        <div class="file-code">FILE 02 // BANTER</div>
+        <div class="file-heading">The Ghost Stare Paradox</div>
+        <div class="file-prompt">[ CLICK TO DECRYPT ]</div>
+        <div class="file-hidden-content">
+          Tries to maintain a cold, lethal hooded skull gaze like Ghost, but turns into a flustered pookie the moment Batgirl gives him a nose kiss or when he spots a kitten.
+        </div>
+      </div>
+
+      <!-- File 03 -->
+      <div class="classified-file-box" onclick="toggleFile(this)">
+        <div class="file-code">FILE 03 // BLINDSPOT</div>
+        <div class="file-heading">Things you don't realise</div>
+        <div class="file-prompt">[ CLICK TO DECRYPT ]</div>
+        <div class="file-hidden-content">
+          Just how much strength your voice gives me after a long day. You don't have to fix everything; simply being on the other end of the phone is enough.
+        </div>
+      </div>
+
+      <!-- File 04 -->
+      <div class="classified-file-box" onclick="toggleFile(this)">
+        <div class="file-code">FILE 04 // THE DIRECTIVE</div>
+        <div class="file-heading">Our sacred golden rule</div>
+        <div class="file-prompt">[ CLICK TO DECRYPT ]</div>
+        <div class="file-hidden-content">
+          Because when things get hard, we remember: “It’s never you vs. me. It’s always you and I vs. the problem.”
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. LONG-DISTANCE TRANSMISSION -->
+  <section class="section-container" id="telemetry">
+    <span class="section-tag">// TELEMETRY INTERCEPT</span>
+    <h2 class="section-heading">Long-Distance Transmission</h2>
+
+    <div class="radar-container">
+      <div class="radar-grid">
+        <div class="connecting-vector"></div>
+        
+        <div class="location-node">
+          <div class="node-title">DEHRADUN</div>
+          <div class="node-sub">CALLSIGN: PRIYANKA</div>
+        </div>
+
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--dusty-pink); z-index: 2; background: var(--bg-card); padding: 4px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+          ~200 KM TETHER
+        </div>
+
+        <div class="location-node">
+          <div class="node-title">GHORAKHAL BASE</div>
+          <div class="node-sub">CADET AYUSH JOSHI</div>
+        </div>
+      </div>
+
+      <p class="distance-quote">
+        “Different places, different routines, but somehow you still manage to be part of my everyday life.”
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       INTERACTIVE MINI-GAME: OPERATION YOU & I VS THE PROBLEM
+       ========================================================================== -->
+  <section class="section-container" id="mini-game-section">
+    <span class="section-tag">// TACTICAL INTERACTIVE SIMULATION</span>
+    <h2 class="section-heading">Operation: You & I vs. The Problem</h2>
+    
+    <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 24px; max-width: 650px;">
+      Tactical radar is picking up incoming obstacles (Distance, Morning PT, Curfews, and Bad Moods). Aim your target reticle and neutralize them into pure love.
+    </p>
+
+    <div class="game-hud-box">
+      <!-- Top HUD Stats -->
+      <div class="game-stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">STATUS:</span>
+          <span class="stat-value" id="gameStatus">RADAR ACTIVE</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">PROBLEMS NEUTRALIZED:</span>
+          <span class="stat-value pink" id="scoreCount">0 / 10</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">LOVE METER:</span>
+          <span class="stat-value pink" id="loveMeterText">0%</span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="love-progress-track">
+        <div class="love-progress-fill" id="loveProgressFill"></div>
+      </div>
+
+      <!-- Radar Arena (Where targets spawn) -->
+      <div class="radar-arena" id="radarArena">
+        <div class="radar-crosshair-bg"></div>
+        <div class="radar-sweep-beam"></div>
+        
+        <div class="arena-start-prompt" id="arenaStartPrompt">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">🎯 ➔ 💖</div>
+          <p style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-pure); margin-bottom: 16px;">
+            CLICK BELOW TO COMMENCE OPERATION
+          </p>
+          <button class="btn-game-action" onclick="startGame()">[ ENGAGE TARGETS ]</button>
+        </div>
+
+        <!-- Secret Victory Card (Hidden until 10 targets are hit) -->
+        <div class="victory-card" id="victoryCard">
+          <div style="font-size: 2.5rem; margin-bottom: 8px;">🎀 🎖️ 💖</div>
+          <h3 style="font-family: var(--font-serif); font-size: 1.8rem; color: #FFF; margin-bottom: 10px;">
+            MISSION ACCOMPLISHED!
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--dusty-pink); font-family: var(--font-mono); margin-bottom: 14px;">
+            ALL PROBLEMS NEUTRALIZED // LOVE CAPACITY: 3000%
+          </p>
+          <p style="font-size: 0.92rem; color: #E5E9F0; line-height: 1.6; max-width: 480px; margin: 0 auto 20px auto;">
+            “Mai ye nahi chahti ki kabhi ladai hi na ho hamari... agar kabhi ho bhi toh hum issi tarah tackle kare cheejo ko... kyuki it's not you vs me, it's you and I vs the problem.”
+          </p>
+          <button class="btn-game-action" onclick="resetGame()">[ PLAY AGAIN ]</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. FINAL TRANSMISSION — BIRTHDAY LETTER -->
+  <section class="section-container" id="final-letter">
+    <div class="final-dossier-wrap">
+      <span class="section-tag">// HIGH PRIORITY DISPATCH</span>
+      <h2 class="section-heading">Final Transmission</h2>
+
+      <div class="envelope-box">
+        <div class="wax-seal-btn" onclick="unsealLetter()">
+          🎀
+        </div>
+        <div class="sealed-text">TOP SECRET // AUTHORIZED RECIPIENT: BATMAN & GHOST</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">
+          [ CLICK WAX SEAL TO DECRYPT PERSONAL LETTER ]
+        </p>
+
+        <!-- Unsealed Letter with Authentic Chat Text -->
+        <div class="letter-content-revealed" id="letterBody">
+          <div class="letter-salutation">Hoiii 👀💖✨✨</div>
+          <div class="letter-paper">
+Congratulationsss......ek mahine ho hi gaya hai hamee....
+Hn ik ye mahina baki time se bht difficult tha hamare liye ik know but fir bhi bht kuch seekha aur samjha bhi ek dusre ke baare me...
+
+Mai ye nahi chahti ki kabhi ladai hi na ho hamari...agar kabhi ho bhi toh hum issi tarah tackle kare cheejo ko...kyuki it's not you vs me but it's you and I vs the problem...
+Bss issi tarah aage bhi koi issue ho toh usse patience ke saath sort out kare hum...
+
+Thankyou for not giving up on me....thankyou for in my situation...thankyou for being with me...aur hn bss gussa km kiya kar yrr....mujhe darr lgta hai... thankyouuu for everythinggg....
+Hn bht baar bura bhi lagta hai yrr..ki saath me bhi ni hai..fir samjhana padta hai khud ko ki koi ni abhi ni hai toh kya hua baad me toh rehna hi hai hum dono ne...
+
+You know what jaise ye ek month nikla I bet aise hi bht time nikal jayegaa saath me hame...
+Aur hn ek aur cheej mujhe pta hai aage bhi kuch na kuch harkate ho hi sakti hai meri gussa dilane wali toh pleaseee....advance me hi sorryyyy uskeee liyee 🥲
+
+Jyada der gussa mt raha kr mujhse...kyuki itni der tujhse bina baat kare nahi reh sakti ab mai...
+
+Ek virtual hug meriii taraff seee 🥲💖💖💖🫂🫂🫂🫂....
+Miss you a lot...💖
+
+I love you 3000....✨💖🫂👀
+          </div>
+
+          <div class="letter-closing">
+            — Priyanka, forever your Dehradun Actual 🤍
+          </div>
+        </div>
+      </div>
+
+      <!-- Comic Batgirl Kiss Box -->
+      <div class="comic-card-wrap">
+        <img src="images/batman-batgirl.png" alt="Batgirl kissing Batman on the nose">
+      </div>
+
+      <div class="final-footer-status">
+        <h3 style="font-family: var(--font-serif); font-size: 1.8rem; color: var(--text-pure); margin-bottom: 8px;">
+          HAPPY 18TH BIRTHDAY, BATMAN.
+        </h3>
+        <p style="color: var(--dusty-pink);">“End of transmission. Beginning of another chapter.”</p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Spawn subtle floating particles
+    function spawnParticles() {
+      const symbols = ['🎀', '🤍', '🦇', '✨', '💀'];
+      const p = document.createElement('div');
+      p.className = 'ambient-particle';
+      p.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+      p.style.left = Math.random() * 92 + 'vw';
+      p.style.top = Math.random() * 80 + 10 + 'vh';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 8000);
+    }
+    setInterval(spawnParticles, 2200);
+
+    // Profile Data Dictionary
+    const profiles = {
+      batman: {
+        badge: '🎀 POOKIE VERIFIED',
+        img: 'images/batman-blush.png',
+        data: [
+          { label: 'CODENAME', val: 'BATMAN 🦇' },
+          { label: 'STATUS', val: 'LEGENDARY POOOKIE 🎀', pink: true },
+          { label: 'LEVEL', val: '18 (TURNING 26 NOVEMBER)' },
+          { label: 'SPECIAL ABILITY', val: 'Wearing pink bows with stoic dignity' },
+          { label: 'WEAKNESS', val: 'Batgirl nose kisses & teasing texts' }
+        ]
+      },
+      ghost: {
+        badge: '💀 HOODED OPERATOR',
+        img: 'images/cinematic-ghost.jpg',
+        data: [
+          { label: 'CODENAME', val: 'SIMON "GHOST" RILEY' },
+          { label: 'STATUS', val: 'TACTICAL LONE WOLF', pink: true },
+          { label: 'LEVEL', val: 'DEFCON 1' },
+          { label: 'SPECIAL ABILITY', val: 'Intimidating skull stare through the shadows' },
+          { label: 'WEAKNESS', val: 'Completely melts for Priyanka' }
+        ]
+      },
+      cadet: {
+        badge: '🎖️ SAINIK CADET',
+        img: 'images/cadet-blazer.jpg',
+        data: [
+          { label: 'CODENAME', val: 'AYUSH JOSHI (PINEAPPLE 🍍)' },
+          { label: 'STATUS', val: 'SAINIK SCHOOL GHORAKHAL', pink: true },
+          { label: 'LEVEL', val: 'OFFICIAL ADULTHOOD' },
+          { label: 'SPECIAL ABILITY', val: 'Dawn PT formations, parade drills & holding medals' },
+          { label: 'WEAKNESS', val: 'Rescuing stray kittens by fighter jets' }
+        ]
+      }
+    };
+
+    function renderDossier(profileKey) {
+      const p = profiles[profileKey];
+      document.getElementById('portraitBadge').innerText = p.badge;
+      document.getElementById('portraitImg').src = p.img;
+
+      const container = document.getElementById('dossierContent');
+      container.innerHTML = p.data.map(item => `
+        <div class="dossier-item">
+          <span class="dossier-label">${item.label}:</span>
+          <span class="dossier-value ${item.pink ? 'pink' : ''}">${item.val}</span>
+        </div>
+      `).join('');
+    }
+
+    function switchProfile(key, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) {
+        btn.classList.add('active');
+      } else if (window.event && window.event.target) {
+        window.event.target.classList.add('active');
+      }
+      renderDossier(key);
+    }
+
+    // Initialize Default Profile
+    renderDossier('batman');
+
+    // Interactive Classified Files
+    function toggleFile(element) {
+      element.classList.toggle('revealed');
+      const prompt = element.querySelector('.file-prompt');
+      if (element.classList.contains('revealed')) {
+        prompt.innerText = '[ DECLASSIFIED ]';
+        prompt.style.color = 'var(--dusty-pink)';
+      } else {
+        prompt.innerText = '[ CLICK TO DECRYPT ]';
+        prompt.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // Unseal Letter & Trigger Crimson + Dusty Pink Confetti
+    function unsealLetter() {
+      const letter = document.getElementById('letterBody');
+      letter.style.display = 'block';
+      confetti({
+        particleCount: 130,
+        spread: 85,
+        origin: { y: 0.7 },
+        colors: ['#F17B9B', '#C52B48', '#F4F0F1']
+      });
+    }
+
+    // ==========================================================================
+    // TACTICAL TARGET RETICLE TRACKING
+    // ==========================================================================
+    const reticleCenter = document.getElementById('reticleCenter');
+    const reticleRing = document.getElementById('reticleRing');
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // Center crosshair snaps instantly
+      reticleCenter.style.left = `${mouseX}px`;
+      reticleCenter.style.top = `${mouseY}px`;
+    });
+
+    // Smooth fluid lagging ring for the tactical HUD feel
+    function animateReticle() {
+      ringX += (mouseX - ringX) * 0.18;
+      ringY += (mouseY - ringY) * 0.18;
+
+      reticleRing.style.left = `${ringX}px`;
+      reticleRing.style.top = `${ringY}px`;
+
+      requestAnimationFrame(animateReticle);
+    }
+    animateReticle();
+
+    // Target-Lock triggers on interactive elements
+    function attachTargetLockEvents(parent = document) {
+      const interactiveSelectors = 'a, button, .classified-file-box, .wax-seal-btn, .tab-btn, .collage-card, .avatar-frame, .threat-node, .btn-game-action';
+      parent.querySelectorAll(interactiveSelectors).forEach((el) => {
+        el.addEventListener('mouseenter', () => {
+          reticleRing.classList.add('target-locked');
+          reticleCenter.classList.add('target-locked');
+        });
+        el.addEventListener('mouseleave', () => {
+          reticleRing.classList.remove('target-locked');
+          reticleCenter.classList.remove('target-locked');
+        });
+      });
+    }
+    attachTargetLockEvents();
+
+    // ==========================================================================
+    // OPERATION: YOU & I VS THE PROBLEM (GAME SCRIPT)
+    // ==========================================================================
+    let gameActive = false;
+    let score = 0;
+    const maxScore = 10;
+    let spawnTimer = null;
+
+    // The "Problems" Ayush has to shoot down
+    const problemThreats = [
+      "200 KM DISTANCE",
+      "05:00 AM DRILL",
+      "GUSSA / MOOD 😤",
+      "ROLL CALL CURFEW",
+      "OVERTHINKING",
+      "MISSED CALLS",
+      "PT FATIGUE",
+      "WAITING DAYS"
+    ];
+
+    const arena = document.getElementById('radarArena');
+    const scoreDisplay = document.getElementById('scoreCount');
+    const loveText = document.getElementById('loveMeterText');
+    const loveFill = document.getElementById('loveProgressFill');
+    const statusText = document.getElementById('gameStatus');
+    const startPrompt = document.getElementById('arenaStartPrompt');
+    const victoryBox = document.getElementById('victoryCard');
+
+    function startGame() {
+      gameActive = true;
+      score = 0;
+      updateScoreUI();
+      startPrompt.style.display = 'none';
+      victoryBox.style.display = 'none';
+      statusText.innerText = "ENGAGING TARGETS";
+      statusText.style.color = "var(--dusty-pink)";
+
+      // Clear any remaining nodes
+      arena.querySelectorAll('.threat-node').forEach(n => n.remove());
+
+      // Spawn a target immediately, then every 1.2s
+      spawnTarget();
+      clearInterval(spawnTimer);
+      spawnTimer = setInterval(spawnTarget, 1200);
+    }
+
+    function spawnTarget() {
+      if (!gameActive) return;
+
+      // Max 4 on screen at once
+      if (arena.querySelectorAll('.threat-node').length >= 4) return;
+
+      const node = document.createElement('div');
+      node.className = 'threat-node';
+      const label = problemThreats[Math.floor(Math.random() * problemThreats.length)];
+      node.innerHTML = `<span>⚠️</span> ${label}`;
+
+      // Random positions inside arena bounds
+      const maxX = Math.max(50, arena.clientWidth - 190);
+      const maxY = Math.max(50, arena.clientHeight - 70);
+      const randX = Math.max(20, Math.floor(Math.random() * maxX));
+      const randY = Math.max(20, Math.floor(Math.random() * maxY));
+
+      node.style.left = `${randX}px`;
+      node.style.top = `${randY}px`;
+
+      // Target lock on hover
+      node.addEventListener('mouseenter', () => {
+        reticleRing.classList.add('target-locked');
+        reticleCenter.classList.add('target-locked');
+      });
+      node.addEventListener('mouseleave', () => {
+        reticleRing.classList.remove('target-locked');
+        reticleCenter.classList.remove('target-locked');
+      });
+
+      // Shoot / Click logic
+      node.addEventListener('click', (e) => {
+        e.stopPropagation();
+        neutralizeTarget(node, e.clientX, e.clientY);
+      });
+
+      arena.appendChild(node);
+
+      // Auto remove after 3.5 seconds if missed
+      setTimeout(() => {
+        if (node.parentElement) node.remove();
+      }, 3500);
+    }
+
+    function neutralizeTarget(node, clickX, clickY) {
+      // Explode into hearts and ribbons
+      createHeartBurst(clickX, clickY);
+
+      node.remove();
+      score++;
+      updateScoreUI();
+
+      if (score >= maxScore) {
+        endGameVictory();
+      }
+    }
+
+    function createHeartBurst(clientX, clickY) {
+      const rect = arena.getBoundingClientRect();
+      const arenaX = clientX - rect.left;
+      const arenaY = clickY - rect.top;
+
+      const emojis = ['💖', '🎀', '🐾', '✨', '🤍', '🍍'];
+
+      for (let i = 0; i < 6; i++) {
+        const burst = document.createElement('div');
+        burst.className = 'heart-burst';
+        burst.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+        burst.style.left = `${arenaX}px`;
+        burst.style.top = `${arenaY}px`;
+
+        // Scatter direction
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * 70 + 40;
+        burst.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+        burst.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+
+        arena.appendChild(burst);
+        setTimeout(() => burst.remove(), 800);
+      }
+    }
+
+    function updateScoreUI() {
+      scoreDisplay.innerText = `${score} / ${maxScore}`;
+      const pct = Math.min(100, Math.round((score / maxScore) * 100));
+      loveFill.style.width = `${pct}%`;
+      loveText.innerText = `${Math.round((score / maxScore) * 3000)}%`;
+    }
+
+    function endGameVictory() {
+      gameActive = false;
+      clearInterval(spawnTimer);
+      arena.querySelectorAll('.threat-node').forEach(n => n.remove());
+
+      statusText.innerText = "MISSION ACCOMPLISHED";
+      statusText.style.color = "var(--dusty-pink)";
+      victoryBox.style.display = 'block';
+
+      // Confetti explosion
+      confetti({
+        particleCount: 140,
+        spread: 90,
+        origin: { y: 0.6 },
+        colors: ['#F17B9B', '#C52B48', '#FFFFFF']
+      });
+    }
+
+    function resetGame() {
+      startGame();
+    }
+  </script>
+</body>
+</html>
